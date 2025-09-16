@@ -5,11 +5,13 @@ from pydantic import BaseModel
 import os
 import uuid
 import logging
+from dotenv import load_dotenv
 from fastapi.responses import JSONResponse
 from datetime import datetime, timezone, timedelta
 from app.livekit_client import LiveKitClient
 from app.llm_client import LLMClient
 
+load_dotenv()
 app = FastAPI()
 
 app.add_middleware(

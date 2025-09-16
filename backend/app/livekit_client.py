@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class LiveKitClient:
     """
-    LiveKit client wapper for room and participant management
+    LiveKit client wrapper for room and participant management
     """
 
     def __init__(self):
@@ -21,7 +21,16 @@ class LiveKitClient:
         if not all([self.api_key, self.api_secret, self.livekit_url]):
             raise ValueError("Missing LiveKit credentials. Check LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_URL")
         
-        self.room_service = api.RoomService(self.livekit_url, self.api_key, self.api_secret)
+        # Initialize the LiveKit API client
+        self.livekit_api = api.LiveKitAPI(
+            url=self.livekit_url,
+            api_key=self.api_key,
+            api_secret=self.api_secret
+        )
+        
+        # Access room service through the API client
+        self.room_service = self.livekit_api.room
+        
         logger.info("LiveKit client initialized successfully")
 
     async def generate_token(
@@ -54,8 +63,8 @@ class LiveKitClient:
                 room_join=True,
                 room=room_name,
                 can_publish=permissions.get("can_publish", True),
-                can_subscribe=permissions.get("can_publish_data", True),
-                can_update_metadata=permissions.get("can_update_metadata", False)
+                can_subscribe=permissions.get("can_subscribe", True),
+                can_publish_data=permissions.get("can_publish_data", True)
             ))
 
             # Set token expiration
@@ -126,7 +135,7 @@ class LiveKitClient:
 
         try:
             room_info = await self.room_service.create_room(
-                api.CreateRoomRequest(
+                api.proto_room.CreateRoomRequest(
                     name=room_name,
                     max_participants=max_participants,
                     empty_timeout=empty_timeout,
@@ -147,7 +156,7 @@ class LiveKitClient:
             }
         
         except Exception as e:
-            logger.error(f"Failed to create room {room_name}L {str(e)}")
+            logger.error(f"Failed to create room {room_name}: {str(e)}")
             raise Exception(f"Room creation failed: {str(e)}")
         
     async def list_rooms(self) -> List[Dict[str, Any]]:
@@ -159,7 +168,7 @@ class LiveKitClient:
         """
 
         try:
-            rooms_response = await self.room_service.list_rooms(api.ListRoomsRequest())
+            rooms_response = await self.room_service.list_rooms(api.proto_room.ListRoomsRequest())
 
             rooms_info = []
             for room in rooms_response.rooms:
@@ -216,7 +225,7 @@ class LiveKitClient:
 
         try:
             await self.room_service.delete_room(
-                api.DeleteRoomRequest(room=room_name)
+                api.proto_room.DeleteRoomRequest(room=room_name)
             )
 
             logger.info(f"Deleted room: {room_name}")
@@ -239,7 +248,7 @@ class LiveKitClient:
 
         try:
             participants_response = await self.room_service.list_participants(
-                api.ListParticipantsRequest(room=room_name)
+                api.proto_room.ListParticipantsRequest(room=room_name)
             )
 
             participants_info = []
@@ -277,8 +286,8 @@ class LiveKitClient:
         Remove a participant from a room
 
         Args:
-            room_namme: Name of the room
-            participant_identity: Indentity of participants to remove
+            room_name: Name of the room
+            participant_identity: Identity of participant to remove
 
         Returns:
             True if successful, False otherwise
@@ -286,7 +295,7 @@ class LiveKitClient:
 
         try:
             await self.room_service.remove_participant(
-                api.RoomParticipantIdentity(
+                api.proto_room.RoomParticipantIdentity(
                     room=room_name,
                     identity=participant_identity
                 )
@@ -310,7 +319,7 @@ class LiveKitClient:
 
         Args:
             room_name: Name of the room
-            participant_identity: Indentity of participant
+            participant_identity: Identity of participant
             metadata: New metadata dictionary
 
         Returns:
@@ -319,7 +328,7 @@ class LiveKitClient:
 
         try:
             await self.room_service.update_participant(
-                api.UpdateParticipantRequest(
+                api.proto_room.UpdateParticipantRequest(
                     room=room_name,
                     identity=participant_identity,
                     metadata=str(metadata)
@@ -340,7 +349,7 @@ class LiveKitClient:
         destination_identities: Optional[List[str]] = None
     ) -> bool:
         """
-        Send data message to participant in room
+        Send data message to participants in room
 
         Args:
             room_name: Name of the room
@@ -353,7 +362,7 @@ class LiveKitClient:
 
         try:
             await self.room_service.send_data(
-                api.SendDataRequest(
+                api.proto_room.SendDataRequest(
                     room=room_name,
                     data=data.encode("utf-8"),
                     destination_identities=destination_identities or []
@@ -386,7 +395,7 @@ class LiveKitClient:
                 options={"verify_exp": True}
             )
 
-            logger.info(f"Token validated for indentity: {payload.get("sub")}")
+            logger.info(f"Token validated for identity: {payload.get('sub')}")
             return payload
         
         except jwt.ExpiredSignatureError:
@@ -429,3 +438,8 @@ class LiveKitClient:
             logger.error(f"Failed to get room stats for {room_name}: {str(e)}")
             return None
 
+    async def close(self):
+        """
+        Close the LiveKit API client
+        """
+        await self.livekit_api.aclose()
