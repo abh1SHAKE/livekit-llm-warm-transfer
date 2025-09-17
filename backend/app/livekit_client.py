@@ -3,7 +3,11 @@ import jwt
 import logging
 from typing import Dict, List, Optional, Any
 from livekit import api
+from dotenv import load_dotenv
+from livekit.protocol import room as proto_room 
 from datetime import datetime, timedelta
+
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -135,7 +139,7 @@ class LiveKitClient:
 
         try:
             room_info = await self.room_service.create_room(
-                api.proto_room.CreateRoomRequest(
+                proto_room.CreateRoomRequest(
                     name=room_name,
                     max_participants=max_participants,
                     empty_timeout=empty_timeout,
@@ -168,7 +172,7 @@ class LiveKitClient:
         """
 
         try:
-            rooms_response = await self.room_service.list_rooms(api.proto_room.ListRoomsRequest())
+            rooms_response = await self.room_service.list_rooms(proto_room.ListRoomsRequest())
 
             rooms_info = []
             for room in rooms_response.rooms:
@@ -225,7 +229,7 @@ class LiveKitClient:
 
         try:
             await self.room_service.delete_room(
-                api.proto_room.DeleteRoomRequest(room=room_name)
+                proto_room.DeleteRoomRequest(room=room_name)
             )
 
             logger.info(f"Deleted room: {room_name}")
@@ -248,7 +252,7 @@ class LiveKitClient:
 
         try:
             participants_response = await self.room_service.list_participants(
-                api.proto_room.ListParticipantsRequest(room=room_name)
+                proto_room.ListParticipantsRequest(room=room_name)
             )
 
             participants_info = []
@@ -295,7 +299,7 @@ class LiveKitClient:
 
         try:
             await self.room_service.remove_participant(
-                api.proto_room.RoomParticipantIdentity(
+                proto_room.RoomParticipantIdentity(
                     room=room_name,
                     identity=participant_identity
                 )
@@ -328,7 +332,7 @@ class LiveKitClient:
 
         try:
             await self.room_service.update_participant(
-                api.proto_room.UpdateParticipantRequest(
+                proto_room.UpdateParticipantRequest(
                     room=room_name,
                     identity=participant_identity,
                     metadata=str(metadata)
@@ -362,7 +366,7 @@ class LiveKitClient:
 
         try:
             await self.room_service.send_data(
-                api.proto_room.SendDataRequest(
+                proto_room.SendDataRequest(
                     room=room_name,
                     data=data.encode("utf-8"),
                     destination_identities=destination_identities or []

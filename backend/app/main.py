@@ -208,10 +208,10 @@ async def initiate_transfer(request: TransferRequest):
             "transfer_room": transfer_room,
             "status": "initiated",
             "agent_a_token": await livekit_client.generate_token(
-                transfer_room, request.agent_a_id, "agent"
+                transfer_room, request.agent_a_id, "agent_a"
             ),
             "agent_b_token": await livekit_client.generate_token(
-                transfer_room, request.agent_b_id, "agent"
+                transfer_room, request.agent_b_id, "agent_b"
             )
         }
     except Exception as e:
@@ -265,7 +265,7 @@ async def complete_transfer(request: CompleteTransferRequest):
         agent_b_token = await livekit_client.generate_token(
             request.caller_room,
             transfer_session["agent_b_id"],
-            "agent"
+            "agent_b"
         )
 
         logging.info(f"Completed transfer {request.transfer_id}")

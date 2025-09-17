@@ -3,8 +3,11 @@ import json
 import logging
 import openai
 from groq import Groq
+from dotenv import load_dotenv
 from datetime import datetime, timezone
 from typing import List, Dict, Optional, Any
+
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -109,7 +112,7 @@ class LLMClient:
 
         try:
             response = self.openai_client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": context}
