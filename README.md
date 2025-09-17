@@ -58,3 +58,17 @@ GROQ_API_KEY=your_groq_key
 LLM_PROVIDER=openai  # or 'groq'
 ```
 
+---
+
+### API Endpoints  
+
+| Method | Endpoint                 | Description                     |
+|--------|--------------------------|---------------------------------|
+| **POST** | `/api/token`             | Generate LiveKit access token   |
+| **POST** | `/api/create-room`       | Create new LiveKit room         |
+| **GET**  | `/api/rooms`             | List active rooms               |
+| **POST** | `/api/initiate-transfer` | Start warm transfer process     |
+| **POST** | `/api/generate-summary`  | Create AI call summary          |
+| **POST** | `/api/complete-transfer` | Finalize agent handoff          |
+
+
